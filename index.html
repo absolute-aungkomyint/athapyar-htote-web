@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<!--
+  ============================================================
+  AthaPyar Htote (အသပြာထုပ်) — Personal Budget Management
+  ============================================================
+
+  An offline-first, client-side single-page application for
+  personal finance tracking. Built for Myanmar citizens with
+  bilingual support (Myanmar / English) and multi-currency handling.
+
+  Architecture:
+    - Single HTML entry point with hidden/shown <div> sections
+    - Tailwind CSS (CDN) for utility-first styling
+    - Vanilla JavaScript (ES6+) for all logic
+    - localStorage for data persistence (JSON format)
+    - Chart.js (CDN) for data visualization
+
+  Navigation model:
+    Sidebar links toggle visibility of #page-* sections.
+    No router library — plain JS class toggling.
+
+  Data keys are namespaced with `aph_` to avoid localStorage collisions.
+
+  Tech stack: HTML5 / Tailwind CSS / Vanilla JS / localStorage / Chart.js
+  Target: Works offline, no build step, no server required.
+  ============================================================
+-->
+<html lang="en" class="h-full">
+
+<head>
+  <!-- ============================================================
+       META & VIEWPORT
+       Standard charset and responsive viewport for mobile-first design.
+       ============================================================ -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="AthaPyar Htote — Offline-first personal budget management for Myanmar citizens" />
+  <meta name="theme-color" content="#0C4A3E" />
+
+  <title>AthaPyar Htote — အသပြာထုပ်</title>
+
+  <!-- ============================================================
+       EXTERNAL STYLES (CDN)
+       Load order matters: fonts → Tailwind → FontAwesome → custom.
+       These CDN links require internet on first load only.
+       For true offline support, download and serve locally.
+       ============================================================ -->
+
+  <!-- Google Fonts: DM Serif Display (headings) + Inter (body/data) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS CDN — utility-first styling without a build step -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Tailwind config: extend default theme with project palette -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          /*
+           * Color palette — grounded in Myanmar visual culture:
+           *   primary  : deep forest teal — prosperity, growth
+           *   accent   : warm amber-gold — lacquerware & gold leaf tradition
+           *   surface  : warm off-white — paper-like warmth, not sterile
+           *   ink      : deep charcoal — readable, not harsh black
+           *   income   : forest green — positive financial flow
+           *   expense  : warm terracotta — outgoing funds
+           */
+          colors: {
+            primary:  { DEFAULT: '#0C4A3E', light: '#14665A', dark: '#08332B' },
+            accent:   { DEFAULT: '#D4A574', light: '#E2BE96', dark: '#B8864F' },
+            surface:  { DEFAULT: '#F7F5F0', card: '#FFFFFF', dark: '#EDE9E1' },
+            ink:      { DEFAULT: '#2D2A26', light: '#6B6560', muted: '#9C9590' },
+            income:   { DEFAULT: '#2D7A4F', light: '#E8F5EE' },
+            expense:  { DEFAULT: '#C4533A', light: '#FDECEA' },
+          },
+          fontFamily: {
+            /* Serif display face for headings — distinctive, not generic */
+            display: ['"DM Serif Display"', 'Georgia', 'serif'],
+            /* Sans body face for data and UI — high legibility */
+            body:    ['"Inter"', 'system-ui', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+
+  <!-- FontAwesome 6 — icon library for navigation and UI elements -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+        integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+  <!-- ============================================================
+       CUSTOM STYLES
+       Minimal overrides that Tailwind utilities can't express.
+       Most styling is done inline with Tailwind classes.
+       ============================================================ -->
+  <style>
+    /* Smooth page transitions — sections fade in when shown */
+    .page-section {
+      display: none;
+      opacity: 0;
+      animation: fadeIn 0.25s ease-out forwards;
+    }
+    .page-section.active {
+      display: block;
+    }
+    @keyframes fadeIn {
+      to { opacity: 1; }
+    }
+
+    /* Sidebar nav link — active state indicator (gold left border) */
+    .nav-link.active {
+      background-color: rgba(212, 165, 116, 0.12);
+      border-left: 3px solid #D4A574;
+      color: #D4A574;
+    }
+
+    /* Scrollbar styling — thin, matches palette */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #F7F5F0; }
+    ::-webkit-scrollbar-thumb { background: #D4A574; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #B8864F; }
+  </style>
+</head>
+
+<body class="h-full bg-surface font-body text-ink antialiased">
+
+  <!-- ============================================================
+       APPLICATION SHELL
+       Two-column layout: fixed sidebar (left) + scrollable main area.
+       The sidebar stays visible across all "pages"; only the main
+       content swaps when navigation changes.
+       ============================================================ -->
+  <div class="flex h-full">
+
+    <!-- ============================================================
+         SIDEBAR — Fixed Navigation
+         Contains: logo/brand, nav links, language toggle, settings.
+         Width: 72px collapsed (icons only), 240px expanded (with labels).
+         On mobile: hidden off-canvas, toggled via hamburger button.
+         ============================================================ -->
+    <aside id="sidebar"
+           class="fixed inset-y-0 left-0 z-40 flex w-[72px] flex-col
+                  bg-primary-dark text-white transition-all duration-300
+                  lg:w-[240px]">
+
+      <!-- Brand / Logo Area -->
+      <div class="flex h-16 items-center gap-3 border-b border-white/10 px-4">
+        <!-- App icon — a simple wallet motif rendered with FontAwesome -->
+        <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-accent/90">
+          <i class="fa-solid fa-wallet text-sm text-primary-dark"></i>
+        </div>
+        <!-- App name — hidden on collapsed sidebar, visible on lg+ -->
+        <div class="hidden lg:block">
+          <h1 class="font-display text-lg leading-tight tracking-wide">အသပြာထုပ်</h1>
+          <p class="text-[10px] font-light tracking-widest text-white/50 uppercase">AthaPyar Htote</p>
+        </div>
+      </div>
+
+      <!-- Primary Navigation Links -->
+      <nav class="flex-1 space-y-1 overflow-y-auto px-2 py-4" aria-label="Main navigation">
+
+        <!--
+          Each nav link uses data-page to identify which #page-* section
+          to show. The JS router (app.js) will read this attribute and
+          toggle the corresponding section's visibility.
+        -->
+
+        <!-- Dashboard — overview of balances, recent activity, charts -->
+        <a href="#dashboard"
+           data-page="dashboard"
+           class="nav-link active flex items-center gap-3 rounded-lg px-3 py-2.5
+                  text-sm font-medium text-white/70 transition-colors
+                  hover:bg-white/10 hover:text-white"
+           aria-current="page">
+          <i class="fa-solid fa-chart-pie w-5 text-center text-base"></i>
+          <span class="hidden lg:inline">Dashboard</span>
+        </a>
+
+        <!-- Transactions — record income & expenses -->
+        <a href="#transactions"
+           data-page="transactions"
+           class="nav-link flex items-center gap-3 rounded-lg px-3 py-2.5
+                  text-sm font-medium text-white/70 transition-colors
+                  hover:bg-white/10 hover:text-white">
+          <i class="fa-solid fa-arrow-right-arrow-left w-5 text-center text-base"></i>
+          <span class="hidden lg:inline">Transactions</span>
+        </a>
+
+        <!-- Budgets — set and track spending limits per category -->
+        <a href="#budgets"
+           data-page="budgets"
+           class="nav-link flex items-center gap-3 rounded-lg px-3 py-2.5
+                  text-sm font-medium text-white/70 transition-colors
+                  hover:bg-white/10 hover:text-white">
+          <i class="fa-solid fa-chart-column w-5 text-center text-base"></i>
+          <span class="hidden lg:inline">Budgets</span>
+        </a>
+
+        <!-- Debts — track loans, repayments, creditors -->
+        <a href="#debts"
+           data-page="debts"
+           class="nav-link flex items-center gap-3 rounded-lg px-3 py-2.5
+                  text-sm font-medium text-white/70 transition-colors
+                  hover:bg-white/10 hover:text-white">
+          <i class="fa-solid fa-hand-holding-dollar w-5 text-center text-base"></i>
+          <span class="hidden lg:inline">Debts</span>
+        </a>
+
+        <!-- Goals — savings targets and progress -->
+        <a href="#goals"
+           data-page="goals"
+           class="nav-link flex items-center gap-3 rounded-lg px-3 py-2.5
+                  text-sm font-medium text-white/70 transition-colors
+                  hover:bg-white/10 hover:text-white">
+          <i class="fa-solid fa-bullseye w-5 text-center text-base"></i>
+          <span class="hidden lg:inline">Goals</span>
+        </a>
+      </nav>
+
+      <!-- Bottom Utility Area — language switch, settings link -->
+      <div class="border-t border-white/10 px-2 py-3 space-y-1">
+
+        <!-- Language toggle button (Myanmar ↔ English) -->
+        <button id="btn-lang-toggle"
+                class="flex w-full items-center gap-3 rounded-lg px-3 py-2.5
+                       text-sm font-medium text-white/60 transition-colors
+                       hover:bg-white/10 hover:text-white"
+                title="Switch language / ဘာသာစကားပြောင်းရန်">
+          <i class="fa-solid fa-language w-5 text-center text-base"></i>
+          <span class="hidden lg:inline">မြန်မာ / EN</span>
+        </button>
+
+        <!-- Settings — app configuration, data export/import -->
+        <a href="#settings"
+           data-page="settings"
+           class="nav-link flex items-center gap-3 rounded-lg px-3 py-2.5
+                  text-sm font-medium text-white/60 transition-colors
+                  hover:bg-white/10 hover:text-white">
+          <i class="fa-solid fa-gear w-5 text-center text-base"></i>
+          <span class="hidden lg:inline">Settings</span>
+        </a>
+      </div>
+    </aside>
+
+    <!-- ============================================================
+         MAIN CONTENT AREA
+         Offset from the left by the sidebar width (72px / 240px).
+         Contains: top bar (mobile hamburger, search, user info) and
+         the swappable page sections (#page-*).
+         ============================================================ -->
+    <main class="ml-[72px] flex min-h-full flex-1 flex-col lg:ml-[240px]">
+
+      <!-- Top Bar — sits above all page sections -->
+      <header class="sticky top-0 z-30 flex h-16 items-center justify-between
+                      border-b border-surface-dark bg-surface/80 px-6
+                      backdrop-blur-sm">
+
+        <!-- Mobile hamburger — only visible below lg breakpoint -->
+        <button id="btn-mobile-menu"
+                class="rounded-lg p-2 text-ink-light transition-colors
+                       hover:bg-surface-dark hover:text-ink lg:hidden"
+                aria-label="Open navigation menu">
+          <i class="fa-solid fa-bars text-lg"></i>
+        </button>
+
+        <!-- Page title — dynamically updated by app.js on navigation -->
+        <h2 id="page-title" class="font-display text-xl text-ink">
+          Dashboard
+        </h2>
+
+        <!-- Right side: currency selector + quick-add button -->
+        <div class="flex items-center gap-3">
+          <!-- Active currency display -->
+          <div class="hidden items-center gap-1.5 rounded-full bg-surface-dark
+                      px-3 py-1.5 text-xs font-medium text-ink-light sm:flex">
+            <i class="fa-solid fa-coins text-accent text-[10px]"></i>
+            <span id="active-currency">MMK</span>
+          </div>
+
+          <!-- Quick-add transaction button -->
+          <button id="btn-quick-add"
+                  class="flex items-center gap-2 rounded-lg bg-primary px-4 py-2
+                         text-sm font-semibold text-white shadow-sm
+                         transition-all hover:bg-primary-light hover:shadow-md
+                         active:scale-[0.97]">
+            <i class="fa-solid fa-plus text-xs"></i>
+            <span class="hidden sm:inline">Add</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- ============================================================
+           PAGE SECTIONS
+           Each section is a "page" of the SPA. Only one is visible
+           at a time. The `active` class controls visibility (see CSS).
+           Content inside each section is placeholder — to be built out
+           with real components and connected to JS modules.
+           ============================================================ -->
+      <div class="flex-1 overflow-y-auto p-6">
+
+        <!-- ========================================
+             PAGE: DASHBOARD
+             Shows: balance overview cards, income vs
+             expense summary, recent transactions,
+             and chart visualizations.
+             ======================================== -->
+        <section id="page-dashboard" class="page-section active">
+          <!-- Balance overview — three summary cards in a row -->
+          <div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+
+            <!-- Card: Total Balance -->
+            <div class="rounded-xl border border-surface-dark bg-surface-card p-5
+                        shadow-sm transition-shadow hover:shadow-md">
+              <div class="mb-3 flex items-center justify-between">
+                <span class="text-xs font-medium uppercase tracking-wider text-ink-muted">
+                  Total Balance
+                </span>
+                <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+                  <i class="fa-solid fa-wallet text-sm text-primary"></i>
+                </div>
+              </div>
+              <p id="total-balance" class="font-display text-2xl text-ink">0</p>
+              <p class="mt-1 text-xs text-ink-muted">MMK</p>
+            </div>
+
+            <!-- Card: Monthly Income -->
+            <div class="rounded-xl border border-surface-dark bg-surface-card p-5
+                        shadow-sm transition-shadow hover:shadow-md">
+              <div class="mb-3 flex items-center justify-between">
+                <span class="text-xs font-medium uppercase tracking-wider text-ink-muted">
+                  This Month Income
+                </span>
+                <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-income-light">
+                  <i class="fa-solid fa-arrow-trend-up text-sm text-income"></i>
+                </div>
+              </div>
+              <p id="total-income" class="font-display text-2xl text-income">0</p>
+              <p class="mt-1 text-xs text-ink-muted">MMK</p>
+            </div>
+
+            <!-- Card: Monthly Expense -->
+            <div class="rounded-xl border border-surface-dark bg-surface-card p-5
+                        shadow-sm transition-shadow hover:shadow-md">
+              <div class="mb-3 flex items-center justify-between">
+                <span class="text-xs font-medium uppercase tracking-wider text-ink-muted">
+                  This Month Expense
+                </span>
+                <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-expense-light">
+                  <i class="fa-solid fa-arrow-trend-down text-sm text-expense"></i>
+                </div>
+              </div>
+              <p id="total-expense" class="font-display text-2xl text-expense">0</p>
+              <p class="mt-1 text-xs text-ink-muted">MMK</p>
+            </div>
+          </div>
+
+          <!-- Charts + Recent Transactions row -->
+          <div class="grid grid-cols-1 gap-6 lg:grid-cols-5">
+
+            <!-- Chart area — spending breakdown (ApexCharts / Chart.js) -->
+            <div class="lg:col-span-3 rounded-xl border border-surface-dark
+                        bg-surface-card p-5 shadow-sm">
+              <h3 class="mb-4 font-display text-lg text-ink">
+                Spending Overview
+              </h3>
+              <!-- Chart.js canvas — rendered by js/charts.js -->
+              <div class="flex h-64 items-center justify-center rounded-lg
+                          bg-surface text-ink-muted">
+                <p class="text-sm">[ Chart renders here ]</p>
+              </div>
+            </div>
+
+            <!-- Recent transactions list -->
+            <div class="lg:col-span-2 rounded-xl border border-surface-dark
+                        bg-surface-card p-5 shadow-sm">
+              <div class="mb-4 flex items-center justify-between">
+                <h3 class="font-display text-lg text-ink">Recent</h3>
+                <a href="#transactions" data-page="transactions"
+                   class="text-xs font-medium text-primary transition-colors
+                          hover:text-primary-light">
+                  View all →
+                </a>
+              </div>
+              <!-- Transaction rows — populated by js/app.js from localStorage -->
+              <div id="recent-transactions" class="space-y-3">
+                <p class="py-8 text-center text-sm text-ink-muted">
+                  No transactions yet. Start by adding one!
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========================================
+             PAGE: TRANSACTIONS
+             Full transaction list with filters,
+             search, and the add/edit form.
+             ======================================== -->
+        <section id="page-transactions" class="page-section">
+          <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h3 class="font-display text-2xl text-ink">Transactions</h3>
+              <p class="text-sm text-ink-muted">Record and review all income &amp; expenses</p>
+            </div>
+            <!-- Filter controls — type filter + date range -->
+            <div class="flex items-center gap-2">
+              <select id="filter-type"
+                      class="rounded-lg border border-surface-dark bg-surface-card
+                             px-3 py-2 text-sm text-ink">
+                <option value="all">All Types</option>
+                <option value="income">Income</option>
+                <option value="expense">Expense</option>
+              </select>
+              <input type="date" id="filter-date-from"
+                     class="rounded-lg border border-surface-dark bg-surface-card
+                            px-3 py-2 text-sm text-ink"
+                     placeholder="From" />
+            </div>
+          </div>
+
+          <!-- Transaction table / list -->
+          <div class="rounded-xl border border-surface-dark bg-surface-card
+                      shadow-sm overflow-hidden">
+            <div id="transactions-list" class="divide-y divide-surface-dark">
+              <p class="p-12 text-center text-sm text-ink-muted">
+                No transactions recorded. Tap <strong>+</strong> to add your first entry.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========================================
+             PAGE: BUDGETS
+             Category-based spending limits with
+             progress bars and over-budget warnings.
+             ======================================== -->
+        <section id="page-budgets" class="page-section">
+          <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h3 class="font-display text-2xl text-ink">Budgets</h3>
+              <p class="text-sm text-ink-muted">Set spending limits and track progress per category</p>
+            </div>
+            <button id="btn-add-budget"
+                    class="flex items-center gap-2 rounded-lg bg-primary px-4 py-2
+                           text-sm font-semibold text-white shadow-sm
+                           transition-all hover:bg-primary-light hover:shadow-md
+                           active:scale-[0.97]">
+              <i class="fa-solid fa-plus text-xs"></i>
+              Set Budget
+            </button>
+          </div>
+
+          <!-- Budget cards — one per category with progress bar -->
+          <div id="budgets-grid" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <p class="col-span-full p-12 text-center text-sm text-ink-muted">
+              No budgets set. Define spending limits for your categories.
+            </p>
+          </div>
+        </section>
+
+        <!-- ========================================
+             PAGE: DEBTS
+             Track money owed — creditors, amounts,
+             due dates, and repayment progress.
+             ======================================== -->
+        <section id="page-debts" class="page-section">
+          <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h3 class="font-display text-2xl text-ink">Debts</h3>
+              <p class="text-sm text-ink-muted">Track loans, repayments, and outstanding balances</p>
+            </div>
+            <button id="btn-add-debt"
+                    class="flex items-center gap-2 rounded-lg bg-primary px-4 py-2
+                           text-sm font-semibold text-white shadow-sm
+                           transition-all hover:bg-primary-light hover:shadow-md
+                           active:scale-[0.97]">
+              <i class="fa-solid fa-plus text-xs"></i>
+              Add Debt
+            </button>
+          </div>
+
+          <!-- Debt cards -->
+          <div id="debts-grid" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <p class="col-span-full p-12 text-center text-sm text-ink-muted">
+              No debts recorded. Add a debt to start tracking repayments.
+            </p>
+          </div>
+        </section>
+
+        <!-- ========================================
+             PAGE: GOALS
+             Savings targets — name, target amount,
+             current progress, deadline.
+             ======================================== -->
+        <section id="page-goals" class="page-section">
+          <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h3 class="font-display text-2xl text-ink">Financial Goals</h3>
+              <p class="text-sm text-ink-muted">Define savings targets and track your progress</p>
+            </div>
+            <button id="btn-add-goal"
+                    class="flex items-center gap-2 rounded-lg bg-primary px-4 py-2
+                           text-sm font-semibold text-white shadow-sm
+                           transition-all hover:bg-primary-light hover:shadow-md
+                           active:scale-[0.97]">
+              <i class="fa-solid fa-plus text-xs"></i>
+              New Goal
+            </button>
+          </div>
+
+          <!-- Goal cards -->
+          <div id="goals-grid" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <p class="col-span-full p-12 text-center text-sm text-ink-muted">
+              No goals yet. Set a savings goal to start tracking.
+            </p>
+          </div>
+        </section>
+
+        <!-- ========================================
+             PAGE: SETTINGS
+             App configuration: language, currency,
+             data export/import, about info.
+             ======================================== -->
+        <section id="page-settings" class="page-section">
+          <div class="mb-6">
+            <h3 class="font-display text-2xl text-ink">Settings</h3>
+            <p class="text-sm text-ink-muted">Configure language, currency, and manage your data</p>
+          </div>
+
+          <div class="max-w-2xl space-y-6">
+
+            <!-- Setting: Language -->
+            <div class="rounded-xl border border-surface-dark bg-surface-card p-5 shadow-sm">
+              <h4 class="mb-3 font-display text-lg text-ink">Language / ဘာသာစကား</h4>
+              <div class="flex items-center gap-3">
+                <button class="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white">
+                  မြန်မာ
+                </button>
+                <button class="rounded-lg border border-surface-dark px-4 py-2
+                               text-sm font-medium text-ink transition-colors
+                               hover:border-primary hover:text-primary">
+                  English
+                </button>
+              </div>
+            </div>
+
+            <!-- Setting: Default Currency -->
+            <div class="rounded-xl border border-surface-dark bg-surface-card p-5 shadow-sm">
+              <h4 class="mb-3 font-display text-lg text-ink">Default Currency</h4>
+              <select id="setting-currency"
+                      class="w-full rounded-lg border border-surface-dark bg-surface
+                             px-4 py-2.5 text-sm text-ink">
+                <option value="MMK">MMK — Myanmar Kyat</option>
+                <option value="USD">USD — US Dollar</option>
+                <option value="SGD">SGD — Singapore Dollar</option>
+                <option value="THB">THB — Thai Baht</option>
+                <option value="CNY">CNY — Chinese Yuan</option>
+              </select>
+            </div>
+
+            <!-- Setting: Data Management (export / import) -->
+            <div class="rounded-xl border border-surface-dark bg-surface-card p-5 shadow-sm">
+              <h4 class="mb-3 font-display text-lg text-ink">Data Management</h4>
+              <p class="mb-4 text-sm text-ink-muted">
+                Export all your data as a JSON file for backup, or import a
+                previous backup to restore.
+              </p>
+              <div class="flex flex-wrap gap-3">
+                <button id="btn-export-data"
+                        class="flex items-center gap-2 rounded-lg border border-primary
+                               px-4 py-2 text-sm font-medium text-primary
+                               transition-colors hover:bg-primary hover:text-white">
+                  <i class="fa-solid fa-download text-xs"></i>
+                  Export Data
+                </button>
+                <label class="flex cursor-pointer items-center gap-2 rounded-lg
+                              border border-surface-dark px-4 py-2 text-sm
+                              font-medium text-ink transition-colors
+                              hover:border-primary hover:text-primary">
+                  <i class="fa-solid fa-upload text-xs"></i>
+                  Import Data
+                  <input type="file" id="btn-import-data" accept=".json" class="hidden" />
+                </label>
+                <button id="btn-clear-data"
+                        class="flex items-center gap-2 rounded-lg border border-expense
+                               px-4 py-2 text-sm font-medium text-expense
+                               transition-colors hover:bg-expense hover:text-white">
+                  <i class="fa-solid fa-trash text-xs"></i>
+                  Clear All Data
+                </button>
+              </div>
+            </div>
+
+            <!-- Setting: About -->
+            <div class="rounded-xl border border-surface-dark bg-surface-card p-5 shadow-sm">
+              <h4 class="mb-2 font-display text-lg text-ink">About</h4>
+              <p class="text-sm text-ink-muted">
+                AthaPyar Htote (အသပြာထုပ်) v0.1.0<br />
+                Offline-first personal budget management.<br />
+                Built with ❤️ for Myanmar.
+              </p>
+            </div>
+          </div>
+        </section>
+
+      </div>
+      <!-- end .flex-1 overflow-y-auto (page content area) -->
+
+    </main>
+
+  </div>
+  <!-- end .flex (application shell) -->
+
+  <!-- ============================================================
+       JAVASCRIPT MODULES
+       Loaded at the end of <body> so the DOM is fully parsed.
+       Each module handles a specific concern — see js/ directory.
+
+       Load order:
+         1. utils.js    — shared helpers (formatting, validation)
+         2. storage.js  — localStorage CRUD, schema, import/export
+         3. i18n.js     — translation map, language switching
+         4. currency.js — exchange rates, conversion helpers
+         5. charts.js   — Chart.js / ApexCharts rendering
+         6. budget.js   — income/expense/budget business logic
+         7. app.js      — main init, page routing, event binding
+       ============================================================ -->
+  <script src="js/utils.js" defer></script>
+  <script src="js/storage.js" defer></script>
+  <script src="js/i18n.js" defer></script>
+  <script src="js/currency.js" defer></script>
+  <script src="js/charts.js" defer></script>
+  <script src="js/budget.js" defer></script>
+  <script src="js/app.js" defer></script>
+
+</body>
+</html>
