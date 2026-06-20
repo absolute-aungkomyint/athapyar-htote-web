@@ -164,15 +164,17 @@
       <nav class="flex-1 space-y-1 overflow-y-auto px-2 py-4" aria-label="Main navigation">
 
         <!--
-          Each nav link uses data-page to identify which #page-* section
-          to show. The JS router (app.js) will read this attribute and
-          toggle the corresponding section's visibility.
+          Each nav link uses data-page to identify which *-section to show.
+          The JS router (app.js) reads this attribute and toggles the
+          corresponding section's visibility. Each link also has an
+          id="nav-link-*" for direct DOM selection.
         -->
 
         <!-- Dashboard — overview of balances, recent activity, charts -->
         <a href="#dashboard"
+           id="nav-link-dashboard"
            data-page="dashboard"
-           class="nav-link active flex items-center gap-3 rounded-lg px-3 py-2.5
+           class="nav-link nav-link-item active flex items-center gap-3 rounded-lg px-3 py-2.5
                   text-sm font-medium text-white/70 transition-colors
                   hover:bg-white/10 hover:text-white"
            aria-current="page">
@@ -182,8 +184,9 @@
 
         <!-- Transactions — record income & expenses -->
         <a href="#transactions"
+           id="nav-link-transactions"
            data-page="transactions"
-           class="nav-link flex items-center gap-3 rounded-lg px-3 py-2.5
+           class="nav-link nav-link-item flex items-center gap-3 rounded-lg px-3 py-2.5
                   text-sm font-medium text-white/70 transition-colors
                   hover:bg-white/10 hover:text-white">
           <i class="fa-solid fa-arrow-right-arrow-left w-5 text-center text-base"></i>
@@ -192,8 +195,9 @@
 
         <!-- Budgets — set and track spending limits per category -->
         <a href="#budgets"
+           id="nav-link-budgets"
            data-page="budgets"
-           class="nav-link flex items-center gap-3 rounded-lg px-3 py-2.5
+           class="nav-link nav-link-item flex items-center gap-3 rounded-lg px-3 py-2.5
                   text-sm font-medium text-white/70 transition-colors
                   hover:bg-white/10 hover:text-white">
           <i class="fa-solid fa-chart-column w-5 text-center text-base"></i>
@@ -202,8 +206,9 @@
 
         <!-- Debts — track loans, repayments, creditors -->
         <a href="#debts"
+           id="nav-link-debts"
            data-page="debts"
-           class="nav-link flex items-center gap-3 rounded-lg px-3 py-2.5
+           class="nav-link nav-link-item flex items-center gap-3 rounded-lg px-3 py-2.5
                   text-sm font-medium text-white/70 transition-colors
                   hover:bg-white/10 hover:text-white">
           <i class="fa-solid fa-hand-holding-dollar w-5 text-center text-base"></i>
@@ -212,8 +217,9 @@
 
         <!-- Goals — savings targets and progress -->
         <a href="#goals"
+           id="nav-link-goals"
            data-page="goals"
-           class="nav-link flex items-center gap-3 rounded-lg px-3 py-2.5
+           class="nav-link nav-link-item flex items-center gap-3 rounded-lg px-3 py-2.5
                   text-sm font-medium text-white/70 transition-colors
                   hover:bg-white/10 hover:text-white">
           <i class="fa-solid fa-bullseye w-5 text-center text-base"></i>
@@ -236,8 +242,9 @@
 
         <!-- Settings — app configuration, data export/import -->
         <a href="#settings"
+           id="nav-link-settings"
            data-page="settings"
-           class="nav-link flex items-center gap-3 rounded-lg px-3 py-2.5
+           class="nav-link nav-link-item flex items-center gap-3 rounded-lg px-3 py-2.5
                   text-sm font-medium text-white/60 transition-colors
                   hover:bg-white/10 hover:text-white">
           <i class="fa-solid fa-gear w-5 text-center text-base"></i>
@@ -308,7 +315,7 @@
              expense summary, recent transactions,
              and chart visualizations.
              ======================================== -->
-        <section id="page-dashboard" class="page-section active">
+        <section id="dashboard-section" class="page-section active">
           <!-- Balance overview — three summary cards in a row -->
           <div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
 
@@ -404,7 +411,7 @@
              Full transaction list with filters,
              search, and the add/edit form.
              ======================================== -->
-        <section id="page-transactions" class="page-section">
+        <section id="transactions-section" class="page-section">
           <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h3 class="font-display text-2xl text-ink" data-i18n="transactions">Transactions</h3>
@@ -442,7 +449,7 @@
              Category-based spending limits with
              progress bars and over-budget warnings.
              ======================================== -->
-        <section id="page-budgets" class="page-section">
+        <section id="budgets-section" class="page-section">
           <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h3 class="font-display text-2xl text-ink" data-i18n="budgets">Budgets</h3>
@@ -471,7 +478,7 @@
              Track money owed — creditors, amounts,
              due dates, and repayment progress.
              ======================================== -->
-        <section id="page-debts" class="page-section">
+        <section id="debts-section" class="page-section">
           <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h3 class="font-display text-2xl text-ink" data-i18n="debts">Debts</h3>
@@ -500,7 +507,7 @@
              Savings targets — name, target amount,
              current progress, deadline.
              ======================================== -->
-        <section id="page-goals" class="page-section">
+        <section id="goals-section" class="page-section">
           <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h3 class="font-display text-2xl text-ink" data-i18n="financial_goals">Financial Goals</h3>
@@ -529,7 +536,7 @@
              App configuration: language, currency,
              data export/import, about info.
              ======================================== -->
-        <section id="page-settings" class="page-section">
+        <section id="settings-section" class="page-section">
           <div class="mb-6">
             <h3 class="font-display text-2xl text-ink" data-i18n="settings">Settings</h3>
             <p class="text-sm text-ink-muted" data-i18n="settings_desc">Configure language, currency, and manage your data</p>

@@ -1,10 +1,11 @@
 {
-  "enabledMcpjsonServers": [
-    "filesystem"
-  ],
   "permissions": {
     "allow": [
       "mcp__filesystem__read_text_file"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "filesystem",
+    "local-env"
+  ]
 }

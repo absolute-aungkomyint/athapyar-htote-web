@@ -81,13 +81,30 @@ const Storage = (() => {
   // ============================================================
 
   /**
+   * Guard: ensure a key carries the `aph_` prefix before touching
+   * localStorage. Prevents accidental reads/writes to unrelated keys
+   * if a caller passes a raw string by mistake.
+   *
+   * @param  {string} key — key to validate
+   * @throws {Error}      — if the prefix is missing
+   */
+  function _assertPrefix(key) {
+    if (!key.startsWith(PREFIX)) {
+      throw new Error(
+        `[Storage] Refusing to access "${key}" — key must start with "${PREFIX}"`
+      );
+    }
+  }
+
+  /**
    * Read a raw value from localStorage and parse it as JSON.
    *
-   * @param  {string} key         — localStorage key
+   * @param  {string} key         — localStorage key (must start with `aph_`)
    * @param  {*}      fallback    — returned on miss or parse error
    * @return {*}                  — parsed value or fallback
    */
   function _read(key, fallback) {
+    _assertPrefix(key);
     try {
       const raw = localStorage.getItem(key);
       if (raw === null) return fallback;
@@ -102,10 +119,12 @@ const Storage = (() => {
    * Stringify a value and write it to localStorage.
    * Catches QuotaExceededError so callers don't crash.
    *
-   * @param {string} key   — localStorage key
+   * @param {string} key   — localStorage key (must start with `aph_`)
    * @param {*}      value — any JSON-serialisable value
+   * @throws {Error}       — re-throws QuotaExceededError for callers to handle
    */
   function _write(key, value) {
+    _assertPrefix(key);
     try {
       localStorage.setItem(key, JSON.stringify(value));
     } catch (err) {
@@ -116,11 +135,17 @@ const Storage = (() => {
 
   /**
    * Remove a key from localStorage.
+   * Wrapped in try/catch so a failure doesn't crash the caller.
    *
-   * @param {string} key — localStorage key
+   * @param {string} key — localStorage key (must start with `aph_`)
    */
   function _remove(key) {
-    localStorage.removeItem(key);
+    _assertPrefix(key);
+    try {
+      localStorage.removeItem(key);
+    } catch (err) {
+      console.error(`[Storage] Failed to remove "${key}":`, err);
+    }
   }
 
   /**
@@ -159,6 +184,8 @@ const Storage = (() => {
       /**
        * Add an item to the collection.
        * For arrays: appends and returns the new item (with generated id).
+       *   The id is always auto-generated — any `id` in `data` is ignored
+       *   to prevent callers from accidentally creating duplicates.
        * For objects: merges the data under the given category key.
        *
        * @param  {Object} data — fields for the new item
@@ -168,7 +195,9 @@ const Storage = (() => {
         const current = _read(key, empty);
 
         if (Array.isArray(current)) {
-          const item = { id: _generateId(), ...data };
+          // Generate id last so it cannot be overwritten by data spread
+          const { id: _ignored, ...fields } = data;
+          const item = { ...fields, id: _generateId() };
           current.push(item);
           _write(key, current);
           return item;
@@ -176,6 +205,10 @@ const Storage = (() => {
 
         // Object-mode (budgets): data should be { category, limit, period }
         const { category, ...rest } = data;
+        if (!category) {
+          console.error('[Storage] add() for object collection requires a "category" field');
+          return null;
+        }
         current[category] = rest;
         _write(key, current);
         return current[category];
@@ -184,6 +217,8 @@ const Storage = (() => {
       /**
        * Update fields on an existing item.
        * For arrays: finds by id and merges partial fields.
+       *   The `id` field is protected — passing it in `fields` is ignored
+       *   so an item's identity can never be accidentally overwritten.
        * For objects: merges fields into the given category.
        *
        * @param  {string} identifier — item id (arrays) or category key (objects)
@@ -196,7 +231,9 @@ const Storage = (() => {
         if (Array.isArray(current)) {
           const index = current.findIndex(item => item.id === identifier);
           if (index === -1) return null;
-          current[index] = { ...current[index], ...fields };
+          // Strip any `id` from fields to protect the item's identity
+          const { id: _ignored, ...safeFields } = fields;
+          current[index] = { ...current[index], ...safeFields };
           _write(key, current);
           return current[index];
         }
@@ -210,26 +247,51 @@ const Storage = (() => {
 
       /**
        * Remove an item from the collection.
-       * For arrays: filters out by id.
-       * For objects: deletes the category key.
+       * For arrays: filters out by id. Returns true if an item was
+       *   removed, false if the identifier was not found.
+       * For objects: deletes the category key. Returns true if the
+       *   key existed, false otherwise.
        *
-       * @param {string} identifier — item id or category key
+       * @param  {string} identifier — item id or category key
+       * @return {boolean}           — whether something was actually removed
        */
       remove(identifier) {
         const current = _read(key, empty);
 
         if (Array.isArray(current)) {
-          _write(key, current.filter(item => item.id !== identifier));
-          return;
+          const before = current.length;
+          const updated = current.filter(item => item.id !== identifier);
+          _write(key, updated);
+          return updated.length < before;
         }
 
+        if (!(identifier in current)) return false;
         delete current[identifier];
         _write(key, current);
+        return true;
       },
 
       /** Empty the collection entirely. */
       clear() {
         _write(key, empty);
+      },
+
+      /**
+       * Find a single item by its identifier.
+       * For arrays: matches by `id` field.
+       * For objects: uses the identifier as the category key.
+       *
+       * @param  {string}       identifier — item id or category key
+       * @return {Object|null}            — the item, or null if not found
+       */
+      getById(identifier) {
+        const current = _read(key, empty);
+
+        if (Array.isArray(current)) {
+          return current.find(item => item.id === identifier) || null;
+        }
+
+        return current[identifier] || null;
       },
     };
   }
@@ -291,6 +353,22 @@ const Storage = (() => {
   }
 
   /**
+   * Export all application data as a single JSON string.
+   * Ready to be written to a file, sent to a server, or
+   * copied by the user for safekeeping.
+   *
+   * @return {string} — JSON string containing every `aph_*` key
+   *
+   * @example
+   *   const json = Storage.exportDataAsJSON();
+   *   const blob = new Blob([json], { type: 'application/json' });
+   *   // → trigger download…
+   */
+  function exportDataAsJSON() {
+    return JSON.stringify(exportAll(), null, 2);
+  }
+
+  /**
    * Import data from a previously exported JSON blob.
    * Validates the version field and overwrites all collections.
    *
@@ -317,6 +395,62 @@ const Storage = (() => {
     } catch (err) {
       console.error('[Storage] Import failed:', err);
       return { success: false, message: 'Failed to parse backup file.' };
+    }
+  }
+
+  /**
+   * Restore application data from a JSON string previously created
+   * by exportDataAsJSON(). Validates structure, merges settings with
+   * defaults, and overwrites all collections.
+   *
+   * @param  {string} jsonString — raw JSON string (from file read, paste, etc.)
+   * @return {{ success: boolean, message: string, imported: Object|null }}
+   *
+   * @example
+   *   const result = Storage.importDataFromJSON(fileContent);
+   *   if (result.success) { /* refresh UI */ }
+   */
+  function importDataFromJSON(jsonString) {
+    if (typeof jsonString !== 'string' || !jsonString.trim()) {
+      return { success: false, message: 'Import data must be a non-empty string.', imported: null };
+    }
+
+    try {
+      const data = JSON.parse(jsonString);
+
+      // ── Validate required structure ─────────────────
+      if (!data.version || !Array.isArray(data.transactions)) {
+        return {
+          success: false,
+          message: 'Invalid backup: missing "version" or "transactions" field.',
+          imported: null,
+        };
+      }
+
+      // ── Write each collection (fall back to empty defaults) ──
+      _write(KEYS.TRANSACTIONS, data.transactions);
+      _write(KEYS.BUDGETS,      data.budgets || {});
+      _write(KEYS.GOALS,        data.goals   || []);
+      _write(KEYS.DEBTS,        data.debts   || []);
+
+      // Settings: merge with defaults so missing fields don't break the app
+      if (data.settings && typeof data.settings === 'object') {
+        _write(KEYS.SETTINGS, { ...DEFAULT_SETTINGS, ...data.settings });
+      }
+
+      return {
+        success: true,
+        message: 'Data imported successfully.',
+        imported: {
+          transactions: data.transactions.length,
+          budgets:      Object.keys(data.budgets || {}).length,
+          goals:        (data.goals || []).length,
+          debts:        (data.debts || []).length,
+        },
+      };
+    } catch (err) {
+      console.error('[Storage] importDataFromJSON failed:', err);
+      return { success: false, message: 'Failed to parse import data: ' + err.message, imported: null };
     }
   }
 
@@ -358,32 +492,36 @@ const Storage = (() => {
     KEYS,
 
     // Transactions
-    getTransactions:   () => transactions.getAll(),
-    addTransaction:    (data) => transactions.add(data),
-    updateTransaction: (id, fields) => transactions.update(id, fields),
-    removeTransaction: (id) => transactions.remove(id),
-    clearTransactions: () => transactions.clear(),
+    getTransactions:     () => transactions.getAll(),
+    getTransactionById:  (id) => transactions.getById(id),
+    addTransaction:      (data) => transactions.add(data),
+    updateTransaction:   (id, fields) => transactions.update(id, fields),
+    removeTransaction:   (id) => transactions.remove(id),
+    clearTransactions:   () => transactions.clear(),
 
     // Budgets (object-keyed by category)
-    getBudgets:   () => budgets.getAll(),
-    setBudget:    (category, limit, period) => budgets.add({ category, limit, period }),
-    updateBudget: (category, fields) => budgets.update(category, fields),
-    removeBudget: (category) => budgets.remove(category),
-    clearBudgets: () => budgets.clear(),
+    getBudgets:          () => budgets.getAll(),
+    getBudgetByCategory: (category) => budgets.getById(category),
+    setBudget:           (category, limit, period) => budgets.add({ category, limit, period }),
+    updateBudget:        (category, fields) => budgets.update(category, fields),
+    removeBudget:        (category) => budgets.remove(category),
+    clearBudgets:        () => budgets.clear(),
 
     // Goals
-    getGoals:   () => goals.getAll(),
-    addGoal:    (data) => goals.add(data),
-    updateGoal: (id, fields) => goals.update(id, fields),
-    removeGoal: (id) => goals.remove(id),
-    clearGoals: () => goals.clear(),
+    getGoals:     () => goals.getAll(),
+    getGoalById:  (id) => goals.getById(id),
+    addGoal:      (data) => goals.add(data),
+    updateGoal:   (id, fields) => goals.update(id, fields),
+    removeGoal:   (id) => goals.remove(id),
+    clearGoals:   () => goals.clear(),
 
     // Debts
-    getDebts:   () => debts.getAll(),
-    addDebt:    (data) => debts.add(data),
-    updateDebt: (id, fields) => debts.update(id, fields),
-    removeDebt: (id) => debts.remove(id),
-    clearDebts: () => debts.clear(),
+    getDebts:     () => debts.getAll(),
+    getDebtById:  (id) => debts.getById(id),
+    addDebt:      (data) => debts.add(data),
+    updateDebt:   (id, fields) => debts.update(id, fields),
+    removeDebt:   (id) => debts.remove(id),
+    clearDebts:   () => debts.clear(),
 
     // Settings
     getSettings,
@@ -391,7 +529,9 @@ const Storage = (() => {
 
     // Bulk operations
     exportAll,
+    exportDataAsJSON,
     importAll,
+    importDataFromJSON,
     clearAll,
     init,
   });
