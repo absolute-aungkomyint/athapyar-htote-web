@@ -190,7 +190,8 @@ const translations = Object.freeze({
 /**
  * Current active language code.
  * Initialised from localStorage (aph_settings.language),
- * falling back to 'en' if nothing is stored yet.
+ * falling back to 'my' (Myanmar) if nothing is stored yet —
+ * the app's primary audience is Myanmar citizens.
  *
  * @type {string} 'en' | 'my'
  */
@@ -204,7 +205,7 @@ let currentLang = (() => {
       }
     }
   } catch (_) { /* corrupted JSON — ignore */ }
-  return 'en';
+  return 'my';
 })();
 
 
@@ -319,9 +320,24 @@ function getCurrentLanguage() {
 
 // ──────────────────────────────────────────────────────
 // AUTO-INITIALISE
-// Apply translations on first load so the page renders in
-// the saved language immediately.
+// On page load, read the saved language preference from
+// localStorage. If none exists, default to 'my' (Myanmar)
+// since the app's primary audience is Myanmar citizens.
+// Then apply translations to every data-i18n element.
 // ──────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-  changeLanguage(currentLang);
+  let lang = 'my'; // default for first-time visitors
+
+  try {
+    const raw = localStorage.getItem('aph_settings');
+    if (raw) {
+      const settings = JSON.parse(raw);
+      if (settings.language && translations[settings.language]) {
+        lang = settings.language;
+      }
+    }
+  } catch (_) { /* corrupted JSON — use default */ }
+
+  // Apply translations and persist the resolved language
+  changeLanguage(lang);
 });

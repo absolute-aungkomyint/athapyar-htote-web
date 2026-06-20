@@ -537,19 +537,17 @@
 
           <div class="max-w-2xl space-y-6">
 
-            <!-- Setting: Language -->
+            <!-- Setting: Language — dropdown wired to changeLanguage() -->
             <div class="rounded-xl border border-surface-dark bg-surface-card p-5 shadow-sm">
               <h4 class="mb-3 font-display text-lg text-ink" data-i18n="language">Language / ဘာသာစကား</h4>
-              <div class="flex items-center gap-3">
-                <button class="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white">
-                  မြန်မာ
-                </button>
-                <button class="rounded-lg border border-surface-dark px-4 py-2
-                               text-sm font-medium text-ink transition-colors
-                               hover:border-primary hover:text-primary">
-                  English
-                </button>
-              </div>
+              <select id="setting-language"
+                      class="w-full rounded-lg border border-surface-dark bg-surface
+                             px-4 py-2.5 text-sm text-ink
+                             transition-colors focus:border-primary focus:outline-none
+                             focus:ring-1 focus:ring-primary">
+                <option value="en">English</option>
+                <option value="my">မြန်မာ (Myanmar)</option>
+              </select>
             </div>
 
             <!-- Setting: Default Currency -->
@@ -640,6 +638,44 @@
   <script src="js/charts.js" defer></script>
   <script src="js/budget.js" defer></script>
   <script src="js/app.js" defer></script>
+
+  <!-- ============================================================
+       INLINE INIT — Language toggle wiring
+       Runs after all deferred modules are loaded.
+       Wires up:
+         - Sidebar #btn-lang-toggle  → cycles en ↔ my
+         - Settings #setting-language → switches to selected lang
+         - Keeps both controls in sync when either is used
+       ============================================================ -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+
+      // ── Sidebar toggle button: cycle en ↔ my ──────
+      const btnToggle = document.getElementById('btn-lang-toggle');
+      if (btnToggle) {
+        btnToggle.addEventListener('click', () => {
+          const current = getCurrentLanguage();
+          const next = current === 'en' ? 'my' : 'en';
+          changeLanguage(next);
+          // Sync the Settings dropdown to match
+          const dropdown = document.getElementById('setting-language');
+          if (dropdown) dropdown.value = next;
+        });
+      }
+
+      // ── Settings dropdown: switch to chosen lang ───
+      const langDropdown = document.getElementById('setting-language');
+      if (langDropdown) {
+        // Set dropdown to saved language on load
+        langDropdown.value = getCurrentLanguage();
+
+        langDropdown.addEventListener('change', (e) => {
+          changeLanguage(e.target.value);
+        });
+      }
+
+    });
+  </script>
 
 </body>
 </html>
