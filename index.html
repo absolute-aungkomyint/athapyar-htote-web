@@ -177,7 +177,7 @@
                   hover:bg-white/10 hover:text-white"
            aria-current="page">
           <i class="fa-solid fa-chart-pie w-5 text-center text-base"></i>
-          <span class="hidden lg:inline">Dashboard</span>
+          <span class="hidden lg:inline" data-i18n="dashboard">Dashboard</span>
         </a>
 
         <!-- Transactions — record income & expenses -->
@@ -187,7 +187,7 @@
                   text-sm font-medium text-white/70 transition-colors
                   hover:bg-white/10 hover:text-white">
           <i class="fa-solid fa-arrow-right-arrow-left w-5 text-center text-base"></i>
-          <span class="hidden lg:inline">Transactions</span>
+          <span class="hidden lg:inline" data-i18n="transactions">Transactions</span>
         </a>
 
         <!-- Budgets — set and track spending limits per category -->
@@ -197,7 +197,7 @@
                   text-sm font-medium text-white/70 transition-colors
                   hover:bg-white/10 hover:text-white">
           <i class="fa-solid fa-chart-column w-5 text-center text-base"></i>
-          <span class="hidden lg:inline">Budgets</span>
+          <span class="hidden lg:inline" data-i18n="budgets">Budgets</span>
         </a>
 
         <!-- Debts — track loans, repayments, creditors -->
@@ -207,7 +207,7 @@
                   text-sm font-medium text-white/70 transition-colors
                   hover:bg-white/10 hover:text-white">
           <i class="fa-solid fa-hand-holding-dollar w-5 text-center text-base"></i>
-          <span class="hidden lg:inline">Debts</span>
+          <span class="hidden lg:inline" data-i18n="debts">Debts</span>
         </a>
 
         <!-- Goals — savings targets and progress -->
@@ -217,7 +217,7 @@
                   text-sm font-medium text-white/70 transition-colors
                   hover:bg-white/10 hover:text-white">
           <i class="fa-solid fa-bullseye w-5 text-center text-base"></i>
-          <span class="hidden lg:inline">Goals</span>
+          <span class="hidden lg:inline" data-i18n="goals">Goals</span>
         </a>
       </nav>
 
@@ -231,7 +231,7 @@
                        hover:bg-white/10 hover:text-white"
                 title="Switch language / ဘာသာစကားပြောင်းရန်">
           <i class="fa-solid fa-language w-5 text-center text-base"></i>
-          <span class="hidden lg:inline">မြန်မာ / EN</span>
+          <span class="hidden lg:inline" data-i18n="lang_toggle">မြန်မာ / EN</span>
         </button>
 
         <!-- Settings — app configuration, data export/import -->
@@ -241,7 +241,7 @@
                   text-sm font-medium text-white/60 transition-colors
                   hover:bg-white/10 hover:text-white">
           <i class="fa-solid fa-gear w-5 text-center text-base"></i>
-          <span class="hidden lg:inline">Settings</span>
+          <span class="hidden lg:inline" data-i18n="settings">Settings</span>
         </a>
       </div>
     </aside>
@@ -268,7 +268,7 @@
         </button>
 
         <!-- Page title — dynamically updated by app.js on navigation -->
-        <h2 id="page-title" class="font-display text-xl text-ink">
+        <h2 id="page-title" class="font-display text-xl text-ink" data-i18n="dashboard">
           Dashboard
         </h2>
 
@@ -288,7 +288,7 @@
                          transition-all hover:bg-primary-light hover:shadow-md
                          active:scale-[0.97]">
             <i class="fa-solid fa-plus text-xs"></i>
-            <span class="hidden sm:inline">Add</span>
+            <span class="hidden sm:inline" data-i18n="add">Add</span>
           </button>
         </div>
       </header>
@@ -316,7 +316,8 @@
             <div class="rounded-xl border border-surface-dark bg-surface-card p-5
                         shadow-sm transition-shadow hover:shadow-md">
               <div class="mb-3 flex items-center justify-between">
-                <span class="text-xs font-medium uppercase tracking-wider text-ink-muted">
+                <span class="text-xs font-medium uppercase tracking-wider text-ink-muted"
+                      data-i18n="total_balance">
                   Total Balance
                 </span>
                 <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
@@ -331,7 +332,8 @@
             <div class="rounded-xl border border-surface-dark bg-surface-card p-5
                         shadow-sm transition-shadow hover:shadow-md">
               <div class="mb-3 flex items-center justify-between">
-                <span class="text-xs font-medium uppercase tracking-wider text-ink-muted">
+                <span class="text-xs font-medium uppercase tracking-wider text-ink-muted"
+                      data-i18n="month_income">
                   This Month Income
                 </span>
                 <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-income-light">
@@ -346,7 +348,8 @@
             <div class="rounded-xl border border-surface-dark bg-surface-card p-5
                         shadow-sm transition-shadow hover:shadow-md">
               <div class="mb-3 flex items-center justify-between">
-                <span class="text-xs font-medium uppercase tracking-wider text-ink-muted">
+                <span class="text-xs font-medium uppercase tracking-wider text-ink-muted"
+                      data-i18n="month_expense">
                   This Month Expense
                 </span>
                 <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-expense-light">
@@ -364,7 +367,7 @@
             <!-- Chart area — spending breakdown (ApexCharts / Chart.js) -->
             <div class="lg:col-span-3 rounded-xl border border-surface-dark
                         bg-surface-card p-5 shadow-sm">
-              <h3 class="mb-4 font-display text-lg text-ink">
+              <h3 class="mb-4 font-display text-lg text-ink" data-i18n="spending_overview">
                 Spending Overview
               </h3>
               <!-- Chart.js canvas — rendered by js/charts.js -->
@@ -378,16 +381,17 @@
             <div class="lg:col-span-2 rounded-xl border border-surface-dark
                         bg-surface-card p-5 shadow-sm">
               <div class="mb-4 flex items-center justify-between">
-                <h3 class="font-display text-lg text-ink">Recent</h3>
+                <h3 class="font-display text-lg text-ink" data-i18n="recent">Recent</h3>
                 <a href="#transactions" data-page="transactions"
                    class="text-xs font-medium text-primary transition-colors
-                          hover:text-primary-light">
+                          hover:text-primary-light"
+                   data-i18n="view_all">
                   View all →
                 </a>
               </div>
               <!-- Transaction rows — populated by js/app.js from localStorage -->
               <div id="recent-transactions" class="space-y-3">
-                <p class="py-8 text-center text-sm text-ink-muted">
+                <p class="py-8 text-center text-sm text-ink-muted" data-i18n="no_transactions">
                   No transactions yet. Start by adding one!
                 </p>
               </div>
@@ -403,17 +407,17 @@
         <section id="page-transactions" class="page-section">
           <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h3 class="font-display text-2xl text-ink">Transactions</h3>
-              <p class="text-sm text-ink-muted">Record and review all income &amp; expenses</p>
+              <h3 class="font-display text-2xl text-ink" data-i18n="transactions">Transactions</h3>
+              <p class="text-sm text-ink-muted" data-i18n="transactions_desc">Record and review all income &amp; expenses</p>
             </div>
             <!-- Filter controls — type filter + date range -->
             <div class="flex items-center gap-2">
               <select id="filter-type"
                       class="rounded-lg border border-surface-dark bg-surface-card
                              px-3 py-2 text-sm text-ink">
-                <option value="all">All Types</option>
-                <option value="income">Income</option>
-                <option value="expense">Expense</option>
+                <option value="all" data-i18n="all_types">All Types</option>
+                <option value="income" data-i18n="income">Income</option>
+                <option value="expense" data-i18n="expense">Expense</option>
               </select>
               <input type="date" id="filter-date-from"
                      class="rounded-lg border border-surface-dark bg-surface-card
@@ -426,7 +430,7 @@
           <div class="rounded-xl border border-surface-dark bg-surface-card
                       shadow-sm overflow-hidden">
             <div id="transactions-list" class="divide-y divide-surface-dark">
-              <p class="p-12 text-center text-sm text-ink-muted">
+              <p class="p-12 text-center text-sm text-ink-muted" data-i18n="no_transactions_recorded">
                 No transactions recorded. Tap <strong>+</strong> to add your first entry.
               </p>
             </div>
@@ -441,8 +445,8 @@
         <section id="page-budgets" class="page-section">
           <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h3 class="font-display text-2xl text-ink">Budgets</h3>
-              <p class="text-sm text-ink-muted">Set spending limits and track progress per category</p>
+              <h3 class="font-display text-2xl text-ink" data-i18n="budgets">Budgets</h3>
+              <p class="text-sm text-ink-muted" data-i18n="budgets_desc">Set spending limits and track progress per category</p>
             </div>
             <button id="btn-add-budget"
                     class="flex items-center gap-2 rounded-lg bg-primary px-4 py-2
@@ -450,13 +454,13 @@
                            transition-all hover:bg-primary-light hover:shadow-md
                            active:scale-[0.97]">
               <i class="fa-solid fa-plus text-xs"></i>
-              Set Budget
+              <span data-i18n="set_budget">Set Budget</span>
             </button>
           </div>
 
           <!-- Budget cards — one per category with progress bar -->
           <div id="budgets-grid" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <p class="col-span-full p-12 text-center text-sm text-ink-muted">
+            <p class="col-span-full p-12 text-center text-sm text-ink-muted" data-i18n="no_budgets">
               No budgets set. Define spending limits for your categories.
             </p>
           </div>
@@ -470,8 +474,8 @@
         <section id="page-debts" class="page-section">
           <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h3 class="font-display text-2xl text-ink">Debts</h3>
-              <p class="text-sm text-ink-muted">Track loans, repayments, and outstanding balances</p>
+              <h3 class="font-display text-2xl text-ink" data-i18n="debts">Debts</h3>
+              <p class="text-sm text-ink-muted" data-i18n="debts_desc">Track loans, repayments, and outstanding balances</p>
             </div>
             <button id="btn-add-debt"
                     class="flex items-center gap-2 rounded-lg bg-primary px-4 py-2
@@ -479,13 +483,13 @@
                            transition-all hover:bg-primary-light hover:shadow-md
                            active:scale-[0.97]">
               <i class="fa-solid fa-plus text-xs"></i>
-              Add Debt
+              <span data-i18n="add_debt">Add Debt</span>
             </button>
           </div>
 
           <!-- Debt cards -->
           <div id="debts-grid" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <p class="col-span-full p-12 text-center text-sm text-ink-muted">
+            <p class="col-span-full p-12 text-center text-sm text-ink-muted" data-i18n="no_debts">
               No debts recorded. Add a debt to start tracking repayments.
             </p>
           </div>
@@ -499,8 +503,8 @@
         <section id="page-goals" class="page-section">
           <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h3 class="font-display text-2xl text-ink">Financial Goals</h3>
-              <p class="text-sm text-ink-muted">Define savings targets and track your progress</p>
+              <h3 class="font-display text-2xl text-ink" data-i18n="financial_goals">Financial Goals</h3>
+              <p class="text-sm text-ink-muted" data-i18n="goals_desc">Define savings targets and track your progress</p>
             </div>
             <button id="btn-add-goal"
                     class="flex items-center gap-2 rounded-lg bg-primary px-4 py-2
@@ -508,13 +512,13 @@
                            transition-all hover:bg-primary-light hover:shadow-md
                            active:scale-[0.97]">
               <i class="fa-solid fa-plus text-xs"></i>
-              New Goal
+              <span data-i18n="new_goal">New Goal</span>
             </button>
           </div>
 
           <!-- Goal cards -->
           <div id="goals-grid" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <p class="col-span-full p-12 text-center text-sm text-ink-muted">
+            <p class="col-span-full p-12 text-center text-sm text-ink-muted" data-i18n="no_goals">
               No goals yet. Set a savings goal to start tracking.
             </p>
           </div>
@@ -527,15 +531,15 @@
              ======================================== -->
         <section id="page-settings" class="page-section">
           <div class="mb-6">
-            <h3 class="font-display text-2xl text-ink">Settings</h3>
-            <p class="text-sm text-ink-muted">Configure language, currency, and manage your data</p>
+            <h3 class="font-display text-2xl text-ink" data-i18n="settings">Settings</h3>
+            <p class="text-sm text-ink-muted" data-i18n="settings_desc">Configure language, currency, and manage your data</p>
           </div>
 
           <div class="max-w-2xl space-y-6">
 
             <!-- Setting: Language -->
             <div class="rounded-xl border border-surface-dark bg-surface-card p-5 shadow-sm">
-              <h4 class="mb-3 font-display text-lg text-ink">Language / ဘာသာစကား</h4>
+              <h4 class="mb-3 font-display text-lg text-ink" data-i18n="language">Language / ဘာသာစကား</h4>
               <div class="flex items-center gap-3">
                 <button class="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white">
                   မြန်မာ
@@ -550,22 +554,22 @@
 
             <!-- Setting: Default Currency -->
             <div class="rounded-xl border border-surface-dark bg-surface-card p-5 shadow-sm">
-              <h4 class="mb-3 font-display text-lg text-ink">Default Currency</h4>
+              <h4 class="mb-3 font-display text-lg text-ink" data-i18n="default_currency">Default Currency</h4>
               <select id="setting-currency"
                       class="w-full rounded-lg border border-surface-dark bg-surface
                              px-4 py-2.5 text-sm text-ink">
-                <option value="MMK">MMK — Myanmar Kyat</option>
-                <option value="USD">USD — US Dollar</option>
-                <option value="SGD">SGD — Singapore Dollar</option>
-                <option value="THB">THB — Thai Baht</option>
-                <option value="CNY">CNY — Chinese Yuan</option>
+                <option value="MMK" data-i18n="currency_mmk">MMK — Myanmar Kyat</option>
+                <option value="USD" data-i18n="currency_usd">USD — US Dollar</option>
+                <option value="SGD" data-i18n="currency_sgd">SGD — Singapore Dollar</option>
+                <option value="THB" data-i18n="currency_thb">THB — Thai Baht</option>
+                <option value="CNY" data-i18n="currency_cny">CNY — Chinese Yuan</option>
               </select>
             </div>
 
             <!-- Setting: Data Management (export / import) -->
             <div class="rounded-xl border border-surface-dark bg-surface-card p-5 shadow-sm">
-              <h4 class="mb-3 font-display text-lg text-ink">Data Management</h4>
-              <p class="mb-4 text-sm text-ink-muted">
+              <h4 class="mb-3 font-display text-lg text-ink" data-i18n="data_management">Data Management</h4>
+              <p class="mb-4 text-sm text-ink-muted" data-i18n="data_management_desc">
                 Export all your data as a JSON file for backup, or import a
                 previous backup to restore.
               </p>
@@ -575,14 +579,14 @@
                                px-4 py-2 text-sm font-medium text-primary
                                transition-colors hover:bg-primary hover:text-white">
                   <i class="fa-solid fa-download text-xs"></i>
-                  Export Data
+                  <span data-i18n="export_data">Export Data</span>
                 </button>
                 <label class="flex cursor-pointer items-center gap-2 rounded-lg
                               border border-surface-dark px-4 py-2 text-sm
                               font-medium text-ink transition-colors
                               hover:border-primary hover:text-primary">
                   <i class="fa-solid fa-upload text-xs"></i>
-                  Import Data
+                  <span data-i18n="import_data">Import Data</span>
                   <input type="file" id="btn-import-data" accept=".json" class="hidden" />
                 </label>
                 <button id="btn-clear-data"
@@ -590,15 +594,15 @@
                                px-4 py-2 text-sm font-medium text-expense
                                transition-colors hover:bg-expense hover:text-white">
                   <i class="fa-solid fa-trash text-xs"></i>
-                  Clear All Data
+                  <span data-i18n="clear_all_data">Clear All Data</span>
                 </button>
               </div>
             </div>
 
             <!-- Setting: About -->
             <div class="rounded-xl border border-surface-dark bg-surface-card p-5 shadow-sm">
-              <h4 class="mb-2 font-display text-lg text-ink">About</h4>
-              <p class="text-sm text-ink-muted">
+              <h4 class="mb-2 font-display text-lg text-ink" data-i18n="about">About</h4>
+              <p class="text-sm text-ink-muted" data-i18n-html="about_text">
                 AthaPyar Htote (အသပြာထုပ်) v0.1.0<br />
                 Offline-first personal budget management.<br />
                 Built with ❤️ for Myanmar.
