@@ -323,7 +323,15 @@
     // ── 4. Keep page titles in sync after language switch ─
     bindLanguageListener();
 
-    // ── 5. Show default view ─────────────────────────────
+    // ── 5. Initialise budget module ──────────────────────
+    //    Sets up the transaction form, renders the transaction
+    //    list, recent transactions, and dashboard summary cards.
+    //    Budget (js/budget.js) must be loaded before this point.
+    if (typeof Budget !== 'undefined' && Budget.initBudget) {
+      Budget.initBudget();
+    }
+
+    // ── 6. Show default view ─────────────────────────────
     //    If the URL carries a valid hash (#transactions, etc.)
     //    deep-link to that section; otherwise show the dashboard
     //    as the default landing page.
