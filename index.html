@@ -94,36 +94,9 @@
 
   <!-- ============================================================
        CUSTOM STYLES
-       Minimal overrides that Tailwind utilities can't express.
-       Most styling is done inline with Tailwind classes.
+       Overrides loaded from external stylesheet after Tailwind.
        ============================================================ -->
-  <style>
-    /* Smooth page transitions — sections fade in when shown */
-    .page-section {
-      display: none;
-      opacity: 0;
-      animation: fadeIn 0.25s ease-out forwards;
-    }
-    .page-section.active {
-      display: block;
-    }
-    @keyframes fadeIn {
-      to { opacity: 1; }
-    }
-
-    /* Sidebar nav link — active state indicator (gold left border) */
-    .nav-link.active {
-      background-color: rgba(212, 165, 116, 0.12);
-      border-left: 3px solid #D4A574;
-      color: #D4A574;
-    }
-
-    /* Scrollbar styling — thin, matches palette */
-    ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-track { background: #F7F5F0; }
-    ::-webkit-scrollbar-thumb { background: #D4A574; border-radius: 3px; }
-    ::-webkit-scrollbar-thumb:hover { background: #B8864F; }
-  </style>
+  <link rel="stylesheet" href="css/styles.css" />
 </head>
 
 <body class="h-full bg-surface font-body text-ink antialiased">
@@ -155,7 +128,7 @@
         </div>
         <!-- App name — hidden on collapsed sidebar, visible on lg+ -->
         <div class="hidden lg:block">
-          <h1 class="font-display text-lg leading-tight tracking-wide">အသပြာထုပ်</h1>
+          <h1 class="font-display text-lg leading-loose tracking-wide">အသပြာထုပ်</h1>
           <p class="text-[10px] font-light tracking-widest text-white/50 uppercase">AthaPyar Htote</p>
         </div>
       </div>
@@ -398,7 +371,7 @@
               </div>
               <!-- Transaction rows — populated by js/app.js from localStorage -->
               <div id="recent-transactions" class="space-y-3">
-                <p class="py-8 text-center text-sm text-ink-muted" data-i18n="no_transactions">
+                <p class="py-8 text-center text-sm leading-loose text-ink-muted" data-i18n="no_transactions">
                   No transactions yet. Start by adding one!
                 </p>
               </div>
@@ -415,7 +388,7 @@
           <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h3 class="font-display text-2xl text-ink" data-i18n="transactions">Transactions</h3>
-              <p class="text-sm text-ink-muted" data-i18n="transactions_desc">Record and review all income &amp; expenses</p>
+              <p class="text-sm leading-loose text-ink-muted" data-i18n="transactions_desc">Record and review all income &amp; expenses</p>
             </div>
             <!-- Filter controls — type filter + date range -->
             <div class="flex items-center gap-2">
@@ -433,11 +406,140 @@
             </div>
           </div>
 
+          <!-- Add Transaction Form -->
+          <div class="mb-6 rounded-xl border border-surface-dark
+                      bg-surface-card p-5 shadow-sm">
+            <h4 class="mb-4 font-display text-lg text-ink"
+                data-i18n="add_transaction">Add Transaction</h4>
+
+            <form id="transaction-form" class="space-y-4" method="post" novalidate>
+              <!-- Row 1: Type · Amount · Currency -->
+              <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+
+                <!-- Type -->
+                <div>
+                  <label for="txn-type"
+                         class="mb-1 block text-xs font-medium uppercase
+                                tracking-wider text-ink-muted"
+                         data-i18n="type">Type</label>
+                  <select id="txn-type"
+                          class="w-full rounded-lg border border-surface-dark
+                                 bg-surface px-4 py-2.5 text-sm text-ink
+                                 transition-colors focus:border-primary
+                                 focus:outline-none focus:ring-1 focus:ring-primary">
+                    <option value="expense" data-i18n="expense">Expense</option>
+                    <option value="income"  data-i18n="income">Income</option>
+                  </select>
+                </div>
+
+                <!-- Amount -->
+                <div>
+                  <label for="txn-amount"
+                         class="mb-1 block text-xs font-medium uppercase
+                                tracking-wider text-ink-muted"
+                         data-i18n="amount">Amount</label>
+                  <input type="number" id="txn-amount"
+                         min="0" step="any" placeholder="0.00"
+                         class="w-full rounded-lg border border-surface-dark
+                                bg-surface px-4 py-2.5 text-sm text-ink
+                                transition-colors focus:border-primary
+                                focus:outline-none focus:ring-1
+                                focus:ring-primary" />
+                </div>
+
+                <!-- Currency -->
+                <div>
+                  <label for="txn-currency"
+                         class="mb-1 block text-xs font-medium uppercase
+                                tracking-wider text-ink-muted"
+                         data-i18n="currency">Currency</label>
+                  <select id="txn-currency"
+                          class="w-full rounded-lg border border-surface-dark
+                                 bg-surface px-4 py-2.5 text-sm text-ink
+                                 transition-colors focus:border-primary
+                                 focus:outline-none focus:ring-1
+                                 focus:ring-primary">
+                    <option value="MMK">MMK</option>
+                    <option value="USD">USD</option>
+                    <option value="SGD">SGD</option>
+                    <option value="THB">THB</option>
+                    <option value="CNY">CNY</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Row 2: Category · Date · Note -->
+              <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+
+                <!-- Category (populated dynamically by budget.js) -->
+                <div>
+                  <label for="txn-category"
+                         class="mb-1 block text-xs font-medium uppercase
+                                tracking-wider text-ink-muted"
+                         data-i18n="category">Category</label>
+                  <select id="txn-category"
+                          class="w-full rounded-lg border border-surface-dark
+                                 bg-surface px-4 py-2.5 text-sm text-ink
+                                 transition-colors focus:border-primary
+                                 focus:outline-none focus:ring-1
+                                 focus:ring-primary">
+                    <option value="" disabled selected>
+                      — Select category —
+                    </option>
+                  </select>
+                </div>
+
+                <!-- Date -->
+                <div>
+                  <label for="txn-date"
+                         class="mb-1 block text-xs font-medium uppercase
+                                tracking-wider text-ink-muted"
+                         data-i18n="date">Date</label>
+                  <input type="date" id="txn-date"
+                         class="w-full rounded-lg border border-surface-dark
+                                bg-surface px-4 py-2.5 text-sm text-ink
+                                transition-colors focus:border-primary
+                                focus:outline-none focus:ring-1
+                                focus:ring-primary" />
+                </div>
+
+                <!-- Note -->
+                <div>
+                  <label for="txn-note"
+                         class="mb-1 block text-xs font-medium uppercase
+                                tracking-wider text-ink-muted"
+                         data-i18n="note">Note</label>
+                  <input type="text" id="txn-note"
+                         placeholder="Optional note"
+                         class="w-full rounded-lg border border-surface-dark
+                                bg-surface px-4 py-2.5 text-sm text-ink
+                                transition-colors focus:border-primary
+                                focus:outline-none focus:ring-1
+                                focus:ring-primary" />
+                </div>
+              </div>
+
+              <!-- Error message + Submit button -->
+              <div class="flex items-center justify-between gap-4">
+                <p id="txn-error" class="hidden text-sm text-expense"></p>
+                <button type="submit" id="txn-submit"
+                        class="ml-auto flex items-center gap-2 rounded-lg
+                               bg-primary px-5 py-2.5 text-sm font-semibold
+                               text-white shadow-sm transition-all
+                               hover:bg-primary-light hover:shadow-md
+                               active:scale-[0.97]">
+                  <i class="fa-solid fa-plus text-xs"></i>
+                  <span data-i18n="add_transaction">Add Transaction</span>
+                </button>
+              </div>
+            </form>
+          </div>
+
           <!-- Transaction table / list -->
           <div class="rounded-xl border border-surface-dark bg-surface-card
                       shadow-sm overflow-hidden">
             <div id="transactions-list" class="divide-y divide-surface-dark">
-              <p class="p-12 text-center text-sm text-ink-muted" data-i18n="no_transactions_recorded">
+              <p class="p-12 text-center text-sm leading-loose text-ink-muted" data-i18n="no_transactions_recorded">
                 No transactions recorded. Tap <strong>+</strong> to add your first entry.
               </p>
             </div>
@@ -453,7 +555,7 @@
           <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h3 class="font-display text-2xl text-ink" data-i18n="budgets">Budgets</h3>
-              <p class="text-sm text-ink-muted" data-i18n="budgets_desc">Set spending limits and track progress per category</p>
+              <p class="text-sm leading-loose text-ink-muted" data-i18n="budgets_desc">Set spending limits and track progress per category</p>
             </div>
             <button id="btn-add-budget"
                     class="flex items-center gap-2 rounded-lg bg-primary px-4 py-2
@@ -465,9 +567,94 @@
             </button>
           </div>
 
+          <!-- Budget Form — hidden by default, shown via "Set Budget" button -->
+          <div id="budget-form-wrapper" class="mb-6 hidden">
+            <div class="rounded-xl border border-surface-dark
+                        bg-surface-card p-5 shadow-sm">
+              <h4 class="mb-4 font-display text-lg text-ink"
+                  data-i18n="set_budget">Set Budget</h4>
+
+              <form id="budget-form" class="space-y-4" method="post" novalidate>
+                <!-- Row: Category · Limit · Period -->
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+
+                  <!-- Category -->
+                  <div>
+                    <label for="budget-category"
+                           class="mb-1 block text-xs font-medium uppercase
+                                  tracking-wider text-ink-muted"
+                           data-i18n="category">Category</label>
+                    <select id="budget-category"
+                            class="w-full rounded-lg border border-surface-dark
+                                   bg-surface px-4 py-2.5 text-sm text-ink
+                                   transition-colors focus:border-primary
+                                   focus:outline-none focus:ring-1 focus:ring-primary">
+                      <option value="" disabled selected>
+                        — Select category —
+                      </option>
+                    </select>
+                  </div>
+
+                  <!-- Limit -->
+                  <div>
+                    <label for="budget-limit"
+                           class="mb-1 block text-xs font-medium uppercase
+                                  tracking-wider text-ink-muted"
+                           data-i18n="limit">Limit</label>
+                    <input type="number" id="budget-limit"
+                           min="0" step="any" placeholder="0.00"
+                           class="w-full rounded-lg border border-surface-dark
+                                  bg-surface px-4 py-2.5 text-sm text-ink
+                                  transition-colors focus:border-primary
+                                  focus:outline-none focus:ring-1
+                                  focus:ring-primary" />
+                  </div>
+
+                  <!-- Period -->
+                  <div>
+                    <label for="budget-period"
+                           class="mb-1 block text-xs font-medium uppercase
+                                  tracking-wider text-ink-muted"
+                           data-i18n="period">Period</label>
+                    <select id="budget-period"
+                            class="w-full rounded-lg border border-surface-dark
+                                   bg-surface px-4 py-2.5 text-sm text-ink
+                                   transition-colors focus:border-primary
+                                   focus:outline-none focus:ring-1 focus:ring-primary">
+                      <option value="monthly" data-i18n="monthly">Monthly</option>
+                      <option value="weekly"  data-i18n="weekly">Weekly</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Error message + action buttons -->
+                <div class="flex items-center justify-between gap-4">
+                  <p id="budget-error" class="hidden text-sm text-expense"></p>
+                  <div class="ml-auto flex items-center gap-2">
+                    <button type="button" id="budget-cancel"
+                            class="rounded-lg border border-surface-dark px-4 py-2.5
+                                   text-sm font-medium text-ink transition-colors
+                                   hover:bg-surface-dark">
+                      <span data-i18n="cancel">Cancel</span>
+                    </button>
+                    <button type="submit" id="budget-submit"
+                            class="flex items-center gap-2 rounded-lg
+                                   bg-primary px-5 py-2.5 text-sm font-semibold
+                                   text-white shadow-sm transition-all
+                                   hover:bg-primary-light hover:shadow-md
+                                   active:scale-[0.97]">
+                      <i class="fa-solid fa-check text-xs"></i>
+                      <span data-i18n="save_budget">Save Budget</span>
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+
           <!-- Budget cards — one per category with progress bar -->
           <div id="budgets-grid" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <p class="col-span-full p-12 text-center text-sm text-ink-muted" data-i18n="no_budgets">
+            <p class="col-span-full p-12 text-center text-sm leading-loose text-ink-muted" data-i18n="no_budgets">
               No budgets set. Define spending limits for your categories.
             </p>
           </div>
@@ -482,7 +669,7 @@
           <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h3 class="font-display text-2xl text-ink" data-i18n="debts">Debts</h3>
-              <p class="text-sm text-ink-muted" data-i18n="debts_desc">Track loans, repayments, and outstanding balances</p>
+              <p class="text-sm leading-loose text-ink-muted" data-i18n="debts_desc">Track loans, repayments, and outstanding balances</p>
             </div>
             <button id="btn-add-debt"
                     class="flex items-center gap-2 rounded-lg bg-primary px-4 py-2
@@ -494,9 +681,109 @@
             </button>
           </div>
 
+          <!-- Debt Form — hidden by default, shown via "Add Debt" button -->
+          <div id="debt-form-wrapper" class="mb-6 hidden">
+            <div class="rounded-xl border border-surface-dark
+                        bg-surface-card p-5 shadow-sm">
+              <h4 class="mb-4 font-display text-lg text-ink"
+                  data-i18n="add_debt">Add Debt</h4>
+
+              <form id="debt-form" class="space-y-4" method="post" novalidate>
+                <!-- Row 1: Creditor · Amount -->
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+
+                  <!-- Creditor -->
+                  <div>
+                    <label for="debt-creditor"
+                           class="mb-1 block text-xs font-medium uppercase
+                                  tracking-wider text-ink-muted"
+                           data-i18n="creditor">Creditor</label>
+                    <input type="text" id="debt-creditor"
+                           placeholder="e.g. U Aung Aung"
+                           class="w-full rounded-lg border border-surface-dark
+                                  bg-surface px-4 py-2.5 text-sm text-ink
+                                  transition-colors focus:border-primary
+                                  focus:outline-none focus:ring-1
+                                  focus:ring-primary" />
+                  </div>
+
+                  <!-- Amount -->
+                  <div>
+                    <label for="debt-amount"
+                           class="mb-1 block text-xs font-medium uppercase
+                                  tracking-wider text-ink-muted"
+                           data-i18n="amount">Amount</label>
+                    <input type="number" id="debt-amount"
+                           min="0" step="any" placeholder="0.00"
+                           class="w-full rounded-lg border border-surface-dark
+                                  bg-surface px-4 py-2.5 text-sm text-ink
+                                  transition-colors focus:border-primary
+                                  focus:outline-none focus:ring-1
+                                  focus:ring-primary" />
+                  </div>
+                </div>
+
+                <!-- Row 2: Due Date · Note -->
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+
+                  <!-- Due Date -->
+                  <div>
+                    <label for="debt-due-date"
+                           class="mb-1 block text-xs font-medium uppercase
+                                  tracking-wider text-ink-muted"
+                           data-i18n="due_date">Due Date</label>
+                    <input type="date" id="debt-due-date"
+                           class="w-full rounded-lg border border-surface-dark
+                                  bg-surface px-4 py-2.5 text-sm text-ink
+                                  transition-colors focus:border-primary
+                                  focus:outline-none focus:ring-1
+                                  focus:ring-primary" />
+                  </div>
+
+                  <!-- Note -->
+                  <div>
+                    <label for="debt-note"
+                           class="mb-1 block text-xs font-medium uppercase
+                                  tracking-wider text-ink-muted"
+                           data-i18n="note">Note</label>
+                    <input type="text" id="debt-note"
+                           placeholder="Optional note"
+                           class="w-full rounded-lg border border-surface-dark
+                                  bg-surface px-4 py-2.5 text-sm text-ink
+                                  transition-colors focus:border-primary
+                                  focus:outline-none focus:ring-1
+                                  focus:ring-primary" />
+                  </div>
+                </div>
+
+                <!-- Error message + action buttons -->
+                <div class="flex items-center justify-between gap-4">
+                  <p id="debt-error" class="hidden text-sm text-expense"></p>
+                  <div class="ml-auto flex items-center gap-2">
+                    <button type="button" id="debt-cancel"
+                            class="rounded-lg border border-surface-dark px-4 py-2.5
+                                   text-sm font-medium text-ink transition-colors
+                                   hover:bg-surface-dark">
+                      <span data-i18n="cancel">Cancel</span>
+                    </button>
+                    <button type="submit" id="debt-submit"
+                            class="flex items-center gap-2 rounded-lg
+                                   bg-primary px-5 py-2.5 text-sm font-semibold
+                                   text-white shadow-sm transition-all
+                                   hover:bg-primary-light hover:shadow-md
+                                   active:scale-[0.97]">
+                      <i class="fa-solid fa-check text-xs"></i>
+                      <span data-i18n="save_debt">Save Debt</span>
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+
           <!-- Debt cards -->
           <div id="debts-grid" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <p class="col-span-full p-12 text-center text-sm text-ink-muted" data-i18n="no_debts">
+            <p class="col-span-full p-12 text-center text-sm leading-loose text-ink-muted" data-i18n="no_debts">
               No debts recorded. Add a debt to start tracking repayments.
             </p>
           </div>
@@ -511,7 +798,7 @@
           <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h3 class="font-display text-2xl text-ink" data-i18n="financial_goals">Financial Goals</h3>
-              <p class="text-sm text-ink-muted" data-i18n="goals_desc">Define savings targets and track your progress</p>
+              <p class="text-sm leading-loose text-ink-muted" data-i18n="goals_desc">Define savings targets and track your progress</p>
             </div>
             <button id="btn-add-goal"
                     class="flex items-center gap-2 rounded-lg bg-primary px-4 py-2
@@ -523,9 +810,94 @@
             </button>
           </div>
 
+          <!-- Goal Form — hidden by default, shown via "New Goal" button -->
+          <div id="goal-form-wrapper" class="mb-6 hidden">
+            <div class="rounded-xl border border-surface-dark
+                        bg-surface-card p-5 shadow-sm">
+              <h4 class="mb-4 font-display text-lg text-ink"
+                  data-i18n="new_goal">New Goal</h4>
+
+              <form id="goal-form" class="space-y-4" method="post" novalidate>
+                <!-- Row 1: Goal Name · Target Amount -->
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+
+                  <!-- Goal Name -->
+                  <div>
+                    <label for="goal-name"
+                           class="mb-1 block text-xs font-medium uppercase
+                                  tracking-wider text-ink-muted"
+                           data-i18n="goal_name">Goal Name</label>
+                    <input type="text" id="goal-name"
+                           placeholder="e.g. Emergency Fund"
+                           class="w-full rounded-lg border border-surface-dark
+                                  bg-surface px-4 py-2.5 text-sm text-ink
+                                  transition-colors focus:border-primary
+                                  focus:outline-none focus:ring-1
+                                  focus:ring-primary" />
+                  </div>
+
+                  <!-- Target Amount -->
+                  <div>
+                    <label for="goal-target"
+                           class="mb-1 block text-xs font-medium uppercase
+                                  tracking-wider text-ink-muted"
+                           data-i18n="target_amount">Target Amount</label>
+                    <input type="number" id="goal-target"
+                           min="0" step="any" placeholder="0.00"
+                           class="w-full rounded-lg border border-surface-dark
+                                  bg-surface px-4 py-2.5 text-sm text-ink
+                                  transition-colors focus:border-primary
+                                  focus:outline-none focus:ring-1
+                                  focus:ring-primary" />
+                  </div>
+                </div>
+
+                <!-- Row 2: Deadline -->
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+
+                  <!-- Deadline -->
+                  <div>
+                    <label for="goal-deadline"
+                           class="mb-1 block text-xs font-medium uppercase
+                                  tracking-wider text-ink-muted"
+                           data-i18n="deadline">Deadline</label>
+                    <input type="date" id="goal-deadline"
+                           class="w-full rounded-lg border border-surface-dark
+                                  bg-surface px-4 py-2.5 text-sm text-ink
+                                  transition-colors focus:border-primary
+                                  focus:outline-none focus:ring-1
+                                  focus:ring-primary" />
+                  </div>
+                </div>
+
+                <!-- Error message + action buttons -->
+                <div class="flex items-center justify-between gap-4">
+                  <p id="goal-error" class="hidden text-sm text-expense"></p>
+                  <div class="ml-auto flex items-center gap-2">
+                    <button type="button" id="goal-cancel"
+                            class="rounded-lg border border-surface-dark px-4 py-2.5
+                                   text-sm font-medium text-ink transition-colors
+                                   hover:bg-surface-dark">
+                      <span data-i18n="cancel">Cancel</span>
+                    </button>
+                    <button type="submit" id="goal-submit"
+                            class="flex items-center gap-2 rounded-lg
+                                   bg-primary px-5 py-2.5 text-sm font-semibold
+                                   text-white shadow-sm transition-all
+                                   hover:bg-primary-light hover:shadow-md
+                                   active:scale-[0.97]">
+                      <i class="fa-solid fa-check text-xs"></i>
+                      <span data-i18n="save_goal">Save Goal</span>
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+
           <!-- Goal cards -->
           <div id="goals-grid" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <p class="col-span-full p-12 text-center text-sm text-ink-muted" data-i18n="no_goals">
+            <p class="col-span-full p-12 text-center text-sm leading-loose text-ink-muted" data-i18n="no_goals">
               No goals yet. Set a savings goal to start tracking.
             </p>
           </div>
@@ -539,7 +911,7 @@
         <section id="settings-section" class="page-section">
           <div class="mb-6">
             <h3 class="font-display text-2xl text-ink" data-i18n="settings">Settings</h3>
-            <p class="text-sm text-ink-muted" data-i18n="settings_desc">Configure language, currency, and manage your data</p>
+            <p class="text-sm leading-loose text-ink-muted" data-i18n="settings_desc">Configure language, currency, and manage your data</p>
           </div>
 
           <div class="max-w-2xl space-y-6">
@@ -574,7 +946,7 @@
             <!-- Setting: Data Management (export / import) -->
             <div class="rounded-xl border border-surface-dark bg-surface-card p-5 shadow-sm">
               <h4 class="mb-3 font-display text-lg text-ink" data-i18n="data_management">Data Management</h4>
-              <p class="mb-4 text-sm text-ink-muted" data-i18n="data_management_desc">
+              <p class="mb-4 text-sm leading-loose text-ink-muted" data-i18n="data_management_desc">
                 Export all your data as a JSON file for backup, or import a
                 previous backup to restore.
               </p>
@@ -607,7 +979,7 @@
             <!-- Setting: About -->
             <div class="rounded-xl border border-surface-dark bg-surface-card p-5 shadow-sm">
               <h4 class="mb-2 font-display text-lg text-ink" data-i18n="about">About</h4>
-              <p class="text-sm text-ink-muted" data-i18n-html="about_text">
+              <p class="text-sm leading-loose text-ink-muted" data-i18n-html="about_text">
                 AthaPyar Htote (အသပြာထုပ်) v0.1.0<br />
                 Offline-first personal budget management.<br />
                 Built with ❤️ for Myanmar.
@@ -644,6 +1016,8 @@
   <script src="js/currency.js" defer></script>
   <script src="js/charts.js" defer></script>
   <script src="js/budget.js" defer></script>
+  <script src="js/debts.js" defer></script>
+  <script src="js/goals.js" defer></script>
   <script src="js/app.js" defer></script>
 
   <!-- ============================================================

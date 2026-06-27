@@ -36,7 +36,8 @@
  * ============================================================
  */
 
-const Storage = (() => {
+/* eslint-disable no-unused-vars */
+var AphStorage = (() => {
   'use strict';
 
   // ============================================================
@@ -408,7 +409,7 @@ const Storage = (() => {
    *
    * @example
    *   const result = Storage.importDataFromJSON(fileContent);
-   *   if (result.success) { /* refresh UI */ }
+   *   if (result.success) { // refresh UI
    */
   function importDataFromJSON(jsonString) {
     if (typeof jsonString !== 'string' || !jsonString.trim()) {
@@ -480,14 +481,21 @@ const Storage = (() => {
   }
 
   // Run init on load so every key exists before other modules read them.
-  init();
+  // Wrapped in try/catch so a storage failure (e.g. QuotaExceeded,
+  // SecurityError in private browsing) never prevents the IIFE from
+  // completing — other modules depend on `Storage` being defined.
+  try {
+    init();
+  } catch (err) {
+    console.error('[Storage] init() failed — Storage API still available:', err);
+  }
 
   // ============================================================
   // PUBLIC API
   // Expose everything other modules need.
   // ============================================================
 
-  return Object.freeze({
+  const api = Object.freeze({
     // Keys (for direct access if needed)
     KEYS,
 
@@ -535,4 +543,9 @@ const Storage = (() => {
     clearAll,
     init,
   });
+
+  // var AphStorage at the top level automatically attaches to window,
+  // making this module accessible across all <script> tags.
+
+  return api;
 })();

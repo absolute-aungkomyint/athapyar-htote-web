@@ -279,6 +279,193 @@
   }
 
   // ──────────────────────────────────────────────────────
+  // SETTINGS — Default Currency Dropdown
+  // ──────────────────────────────────────────────────────
+
+  /**
+   * Wire up the Settings page #setting-currency dropdown so that
+   * changing the selection persists the new default currency to
+   * localStorage (aph_settings.currency) immediately.
+   *
+   * Also syncs the transaction form's #txn-currency dropdown to
+   * match, so the next submission uses the updated default.
+   */
+  function bindSettingsCurrency() {
+    const currencyDropdown = document.getElementById('setting-currency');
+    if (!currencyDropdown) return;
+
+    // Set dropdown to saved currency on load
+    try {
+      if (typeof AphStorage !== 'undefined' && AphStorage.getSettings) {
+        const settings = AphStorage.getSettings();
+        if (settings.currency) {
+          currencyDropdown.value = settings.currency;
+        }
+      }
+    } catch (_) { /* ignore */ }
+
+    currencyDropdown.addEventListener('change', (e) => {
+      const newCurrency = e.target.value;
+      try {
+        if (typeof AphStorage !== 'undefined' && AphStorage.updateSettings) {
+          AphStorage.updateSettings({ currency: newCurrency });
+          console.log('[App] Default currency changed to:', newCurrency);
+        }
+      } catch (err) {
+        console.error('[App] Failed to save currency setting:', err);
+      }
+
+      // Sync the transaction form's currency dropdown immediately
+      const txnCurrency = document.getElementById('txn-currency');
+      if (txnCurrency) {
+        txnCurrency.value = newCurrency;
+      }
+    });
+  }
+
+  // ──────────────────────────────────────────────────────
+  // DATA MANAGEMENT — Export / Import / Clear
+  // ──────────────────────────────────────────────────────
+
+  /**
+   * Wire up the three Settings data-management buttons:
+   *
+   *   #btn-export-data  — download all app data as a .json file
+   *   #btn-import-data  — upload a .json backup and restore
+   *   #btn-clear-data   — wipe all app data from localStorage
+   *
+   * Export:
+   *   Calls Storage.exportDataAsJSON() to get a JSON string,
+   *   creates a Blob, generates a download link via URL.createObjectURL,
+   *   and triggers the download. The filename includes the current
+   *   date for easy identification.
+   *
+   * Import:
+   *   Reads the selected .json file via FileReader, passes the
+   *   contents to Storage.importDataFromJSON(), and reloads the
+   *   page on success so all modules re-initialise with the
+   *   restored data.
+   *
+   * Clear:
+   *   Asks for double confirmation, then calls Storage.clearAll()
+   *   and reloads the page.
+   */
+  function bindDataManagement() {
+    const btnExport = document.getElementById('btn-export-data');
+    const btnImport = document.getElementById('btn-import-data');
+    const btnClear  = document.getElementById('btn-clear-data');
+
+    // ── Export ─────────────────────────────────────────
+    if (btnExport) {
+      btnExport.addEventListener('click', () => {
+        try {
+          if (typeof AphStorage === 'undefined' || !AphStorage.exportDataAsJSON) {
+            alert('Storage module not loaded. Please reload the page.');
+            return;
+          }
+
+          const json = AphStorage.exportDataAsJSON();
+          const blob = new Blob([json], { type: 'application/json' });
+          const url  = URL.createObjectURL(blob);
+
+          // Build filename: aph-backup-YYYY-MM-DD.json
+          const date = new Date().toISOString().split('T')[0];
+          const a    = document.createElement('a');
+          a.href     = url;
+          a.download = `aph-backup-${date}.json`;
+          document.body.appendChild(a);
+          a.click();
+
+          // Cleanup
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+
+          console.log('[App] Data exported successfully');
+        } catch (err) {
+          console.error('[App] Export failed:', err);
+          alert('Export failed. Please try again.');
+        }
+      });
+    }
+
+    // ── Import ─────────────────────────────────────────
+    if (btnImport) {
+      btnImport.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+
+        reader.onload = (event) => {
+          try {
+            if (typeof AphStorage === 'undefined' || !AphStorage.importDataFromJSON) {
+              alert('Storage module not loaded. Please reload the page.');
+              return;
+            }
+
+            const result = AphStorage.importDataFromJSON(event.target.result);
+
+            if (result.success) {
+              console.log('[App] Data imported:', result.imported);
+              alert('Data imported successfully. The page will now reload.');
+              window.location.reload();
+            } else {
+              console.warn('[App] Import failed:', result.message);
+              alert('Import failed: ' + result.message);
+            }
+          } catch (err) {
+            console.error('[App] Import error:', err);
+            alert('Import failed. The file may be corrupted or in the wrong format.');
+          }
+        };
+
+        reader.onerror = () => {
+          console.error('[App] FileReader error');
+          alert('Failed to read the file. Please try again.');
+        };
+
+        reader.readAsText(file);
+
+        // Reset the input so the same file can be re-selected
+        btnImport.value = '';
+      });
+    }
+
+    // ── Clear All Data ─────────────────────────────────
+    if (btnClear) {
+      btnClear.addEventListener('click', () => {
+        const firstConfirm = window.confirm(
+          'Are you sure you want to delete ALL data?\n\n' +
+          'This includes all transactions, budgets, debts, goals, and settings.\n' +
+          'This action cannot be undone.'
+        );
+        if (!firstConfirm) return;
+
+        const secondConfirm = window.confirm(
+          'This is your last chance.\n\n' +
+          'All data will be permanently erased. Continue?'
+        );
+        if (!secondConfirm) return;
+
+        try {
+          if (typeof AphStorage === 'undefined' || !AphStorage.clearAll) {
+            alert('Storage module not loaded. Please reload the page.');
+            return;
+          }
+
+          AphStorage.clearAll();
+          console.log('[App] All data cleared');
+          alert('All data has been cleared. The page will now reload.');
+          window.location.reload();
+        } catch (err) {
+          console.error('[App] Clear failed:', err);
+          alert('Failed to clear data. Please try again.');
+        }
+      });
+    }
+  }
+
+  // ──────────────────────────────────────────────────────
   // INITIALISE — initApp()
   // ──────────────────────────────────────────────────────
 
@@ -319,6 +506,8 @@
     bindMobileMenu();
     bindPopState();
     bindQuickAdd();
+    bindSettingsCurrency();
+    bindDataManagement();
 
     // ── 4. Keep page titles in sync after language switch ─
     bindLanguageListener();
@@ -331,7 +520,21 @@
       Budget.initBudget();
     }
 
-    // ── 6. Show default view ─────────────────────────────
+    // ── 6. Initialise debts module ────────────────────────
+    //    Sets up the debt form, renders the debt card list.
+    //    Debts (js/debts.js) must be loaded before this point.
+    if (typeof Debts !== 'undefined' && Debts.initDebts) {
+      Debts.initDebts();
+    }
+
+    // ── 7. Initialise goals module ────────────────────────
+    //    Sets up the goal form, renders the goal card list.
+    //    Goals (js/goals.js) must be loaded before this point.
+    if (typeof Goals !== 'undefined' && Goals.initGoals) {
+      Goals.initGoals();
+    }
+
+    // ── 8. Show default view ─────────────────────────────
     //    If the URL carries a valid hash (#transactions, etc.)
     //    deep-link to that section; otherwise show the dashboard
     //    as the default landing page.
