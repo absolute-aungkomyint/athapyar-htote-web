@@ -1,8 +1,21 @@
 {
   "mcpServers": {
-    "local-env": {
-      "command": "node",
-      "args": ["-e", "console.log('MCP Connected Successfully')"]
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "/home/akm/Github/athapyar-htote-web"
+      ]
+    },
+    "sqlite": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sqlite",
+        "--db",
+        "/home/akm/Github/athapyar-htote-web/athapyar.db"
+      ]
     }
   }
 }

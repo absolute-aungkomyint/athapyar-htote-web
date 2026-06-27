@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "mcp__filesystem__read_text_file",
-      "mcp__filesystem__create_directory"
+      "mcp__filesystem__create_directory",
+      "Bash(npx --version)",
+      "Bash(npm list *)"
     ]
   },
   "enabledMcpjsonServers": [
